@@ -15,12 +15,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# -z如果$ROCKETMQ_HOME为空
 if [ -z "$ROCKETMQ_HOME" ] ; then
   ## resolve links - $0 may be a link to maven's home
   PRG="$0"
+  echo "first" +"$PRG"
 
   # need this for relative symlinks
+  #-h 用来判断$PRG文件是否存在并且是一个符号链接
   while [ -h "$PRG" ] ; do
+    #显示当前文件夹具体信息
     ls=`ls -ld "$PRG"`
     link=`expr "$ls" : '.*-> \(.*\)$'`
     if expr "$link" : '/.*' > /dev/null; then
@@ -29,7 +33,7 @@ if [ -z "$ROCKETMQ_HOME" ] ; then
       PRG="`dirname "$PRG"`/$link"
     fi
   done
-
+  echo "second" +"$PRG"
   saveddir=`pwd`
 
   ROCKETMQ_HOME=`dirname "$PRG"`/..
@@ -38,8 +42,12 @@ if [ -z "$ROCKETMQ_HOME" ] ; then
   ROCKETMQ_HOME=`cd "$ROCKETMQ_HOME" && pwd`
 
   cd "$saveddir"
+
+   echo "saveddir" +"$saveddir"
+   echo "$ROCKETMQ_HOME"
 fi
 
 export ROCKETMQ_HOME
 
 sh ${ROCKETMQ_HOME}/bin/runserver.sh org.apache.rocketmq.namesrv.NamesrvStartup $@
+
