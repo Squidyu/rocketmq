@@ -76,23 +76,32 @@ public class NamesrvController {
 
     public boolean initialize() {
 
+        //从持久化文件中加载配置到内存
         this.kvConfigManager.load();
 
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
 
+        //初始化netty执行器 8个线程
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
-
+        //注册处理器
         this.registerProcessor();
 
+        /**
+         * initialDelay 延迟首次执行的时间 5s
+         * period 连续执行的时间间隔 10s
+         * 定时扫描死掉的Broker
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
             public void run() {
+
                 NamesrvController.this.routeInfoManager.scanNotActiveBroker();
             }
         }, 5, 10, TimeUnit.SECONDS);
 
+        //定期打印kvConfigManager的配置
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -102,7 +111,7 @@ public class NamesrvController {
         }, 1, 10, TimeUnit.MINUTES);
 
         if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {
-            // Register a listener to reload SslContext
+            // Register a listener to reload SslContext 注册一个监听器重新加载SslContext
             try {
                 fileWatchService = new FileWatchService(
                     new String[] {
@@ -143,12 +152,13 @@ public class NamesrvController {
     }
 
     private void registerProcessor() {
+//        是否开启集群测试
         if (namesrvConfig.isClusterTest()) {
-
+//            注册集群测试请求处理器
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()),
                 this.remotingExecutor);
         } else {
-
+//            注册默认的请求处理器
             this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
         }
     }

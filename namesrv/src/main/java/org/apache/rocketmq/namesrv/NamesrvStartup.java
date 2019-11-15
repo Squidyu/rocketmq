@@ -54,9 +54,9 @@ public class NamesrvStartup {
     public static NamesrvController main0(String[] args) {
 
         try {
-            // 源码解析之创建namesrv控制器 =》
+            // 创建namesrv控制器
             NamesrvController controller = createNamesrvController(args);
-            //源码解析之启动namesrv控制器 =》
+            //启动namesrv控制器
             start(controller);
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
             log.info(tip);
@@ -76,16 +76,16 @@ public class NamesrvStartup {
         //PackageConflictDetect.detectFastjson();
 
         /*jar包启动时，忽略*/
-        //构建命令行操作的指令 =》
+        //构建命令行操作的指令
         Options options = ServerUtil.buildCommandlineOptions(new Options());
-        //mqnamesrv 启动namesrv命令 =》
+        //mqnamesrv 启动namesrv命令
         commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new PosixParser());
         if (null == commandLine) {
             System.exit(-1);
             return null;
         }
 
-        //解析配置文件 =》
+        //解析配置文件
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
         namesrvConfig.setRocketmqHome(System.getProperty("user.dir"));
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
@@ -145,7 +145,7 @@ public class NamesrvStartup {
         MixAll.printObjectProperties(log, namesrvConfig);
         MixAll.printObjectProperties(log, nettyServerConfig);
 
-        //创建namesrv控制器 =》
+        //创建namesrv控制器
         final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
 
         // remember all configs to prevent discard把配置文件配置值的属性值注册到namesrv控制器
@@ -160,6 +160,7 @@ public class NamesrvStartup {
             throw new IllegalArgumentException("NamesrvController is null");
         }
 
+//        初始化namesrv控制器
         boolean initResult = controller.initialize();
         if (!initResult) {
             controller.shutdown();
@@ -173,7 +174,7 @@ public class NamesrvStartup {
                 return null;
             }
         }));
-
+//        namesrv控制器启动
         controller.start();
 
         return controller;

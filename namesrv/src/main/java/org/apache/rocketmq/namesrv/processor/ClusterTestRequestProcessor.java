@@ -35,7 +35,7 @@ public class ClusterTestRequestProcessor extends DefaultRequestProcessor {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private final DefaultMQAdminExt adminExt;
     private final String productEnvName;
-
+//    创建集群测试请求处理器
     public ClusterTestRequestProcessor(NamesrvController namesrvController, String productEnvName) {
         super(namesrvController);
         this.productEnvName = productEnvName;
