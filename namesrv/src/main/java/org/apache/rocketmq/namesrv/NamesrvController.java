@@ -70,6 +70,7 @@ public class NamesrvController {
             log,
             this.namesrvConfig, this.nettyServerConfig
         );
+//        指定保存namesrv配置的配置文件
         this.configuration.setStorePathFromConfig(this.namesrvConfig, "configStorePath");
     }
 
