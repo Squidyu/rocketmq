@@ -137,9 +137,10 @@ public class NamesrvStartup {
         configurator.setContext(lc);
         lc.reset();
         System.out.println(namesrvConfig.getRocketmqHome() + "/target/classes/logback_namesrv.xml");
+        System.out.println(namesrvConfig.getClass().getClassLoader().getResource("logback_namesrv.xml").getFile());
         //logback日志配置
-        configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/target/classes/logback_namesrv.xml");
-
+//        configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/target/classes/logback_namesrv.xml");
+        configurator.doConfigure(namesrvConfig.getClass().getClassLoader().getResource("logback_namesrv.xml"));
         log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
         MixAll.printObjectProperties(log, namesrvConfig);

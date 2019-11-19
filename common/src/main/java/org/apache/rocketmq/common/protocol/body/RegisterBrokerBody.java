@@ -47,6 +47,7 @@ public class RegisterBrokerBody extends RemotingSerializable {
     public byte[] encode(boolean compress) {
 
         if (!compress) {
+//            json编码
             return super.encode();
         }
         long start = System.currentTimeMillis();
@@ -56,6 +57,7 @@ public class RegisterBrokerBody extends RemotingSerializable {
         ConcurrentMap<String, TopicConfig> topicConfigTable = cloneTopicConfigTable(topicConfigSerializeWrapper.getTopicConfigTable());
         assert topicConfigTable != null;
         try {
+//            版本json编码
             byte[] buffer = dataVersion.encode();
 
             // write data version

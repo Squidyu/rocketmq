@@ -129,76 +129,112 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     public RemotingCommand processRequest(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
         switch (request.getCode()) {
+//            更新并创建topic
             case RequestCode.UPDATE_AND_CREATE_TOPIC:
                 return this.updateAndCreateTopic(ctx, request);
+//            删除topic
             case RequestCode.DELETE_TOPIC_IN_BROKER:
                 return this.deleteTopic(ctx, request);
+//            获取所有的topic配置信息
             case RequestCode.GET_ALL_TOPIC_CONFIG:
                 return this.getAllTopicConfig(ctx, request);
+//            更新broker配置信息
             case RequestCode.UPDATE_BROKER_CONFIG:
                 return this.updateBrokerConfig(ctx, request);
+//            获取broker的配置信息
             case RequestCode.GET_BROKER_CONFIG:
                 return this.getBrokerConfig(ctx, request);
+//            查找offset按时间
             case RequestCode.SEARCH_OFFSET_BY_TIMESTAMP:
                 return this.searchOffsetByTimestamp(ctx, request);
+//            获取最大的offset
             case RequestCode.GET_MAX_OFFSET:
                 return this.getMaxOffset(ctx, request);
+//            获取最小的offset
             case RequestCode.GET_MIN_OFFSET:
                 return this.getMinOffset(ctx, request);
+//            获取最早的消息存储时间获取最早的消息存储时间
             case RequestCode.GET_EARLIEST_MSG_STORETIME:
                 return this.getEarliestMsgStoretime(ctx, request);
+//            获取broker的运行时信息
             case RequestCode.GET_BROKER_RUNTIME_INFO:
                 return this.getBrokerRuntimeInfo(ctx, request);
+//            批量锁定消息队列
             case RequestCode.LOCK_BATCH_MQ:
                 return this.lockBatchMQ(ctx, request);
+//            批量解锁消息队列
             case RequestCode.UNLOCK_BATCH_MQ:
                 return this.unlockBatchMQ(ctx, request);
+//            更新和创建订阅组
             case RequestCode.UPDATE_AND_CREATE_SUBSCRIPTIONGROUP:
                 return this.updateAndCreateSubscriptionGroup(ctx, request);
+//            获取所有的订阅组配置信息
             case RequestCode.GET_ALL_SUBSCRIPTIONGROUP_CONFIG:
                 return this.getAllSubscriptionGroup(ctx, request);
+//            删除订阅组
             case RequestCode.DELETE_SUBSCRIPTIONGROUP:
                 return this.deleteSubscriptionGroup(ctx, request);
+//            获取topic的状态信息
             case RequestCode.GET_TOPIC_STATS_INFO:
                 return this.getTopicStatsInfo(ctx, request);
+//            获取消费者连接列表
             case RequestCode.GET_CONSUMER_CONNECTION_LIST:
                 return this.getConsumerConnectionList(ctx, request);
+//            获取生产者连接列表
             case RequestCode.GET_PRODUCER_CONNECTION_LIST:
                 return this.getProducerConnectionList(ctx, request);
+//            获取消费者的状态
             case RequestCode.GET_CONSUME_STATS:
                 return this.getConsumeStats(ctx, request);
+//            获取所有消费者的offset
             case RequestCode.GET_ALL_CONSUMER_OFFSET:
                 return this.getAllConsumerOffset(ctx, request);
+//            获取所有delay的offset
             case RequestCode.GET_ALL_DELAY_OFFSET:
                 return this.getAllDelayOffset(ctx, request);
+//            调用broker重置offset
             case RequestCode.INVOKE_BROKER_TO_RESET_OFFSET:
                 return this.resetOffset(ctx, request);
+//                调用broker获取消费者状态
             case RequestCode.INVOKE_BROKER_TO_GET_CONSUMER_STATUS:
                 return this.getConsumerStatus(ctx, request);
+//                查询topic被哪些消费者消费
             case RequestCode.QUERY_TOPIC_CONSUME_BY_WHO:
                 return this.queryTopicConsumeByWho(ctx, request);
+//                注册过路的server
             case RequestCode.REGISTER_FILTER_SERVER:
                 return this.registerFilterServer(ctx, request);
+//            查询消费者时间跨度
             case RequestCode.QUERY_CONSUME_TIME_SPAN:
                 return this.queryConsumeTimeSpan(ctx, request);
+//                从broker中获取系统topic列表
             case RequestCode.GET_SYSTEM_TOPIC_LIST_FROM_BROKER:
                 return this.getSystemTopicListFromBroker(ctx, request);
+//            清除过期的消费队列
             case RequestCode.CLEAN_EXPIRED_CONSUMEQUEUE:
                 return this.cleanExpiredConsumeQueue();
+//                清除不再使用的topic
             case RequestCode.CLEAN_UNUSED_TOPIC:
                 return this.cleanUnusedTopic();
+//                获取消费者运行信息
             case RequestCode.GET_CONSUMER_RUNNING_INFO:
                 return this.getConsumerRunningInfo(ctx, request);
+//                查询修改后的offset
             case RequestCode.QUERY_CORRECTION_OFFSET:
                 return this.queryCorrectionOffset(ctx, request);
+//            直接消费消息
             case RequestCode.CONSUME_MESSAGE_DIRECTLY:
                 return this.consumeMessageDirectly(ctx, request);
+//            clone组的offset
             case RequestCode.CLONE_GROUP_OFFSET:
                 return this.cloneGroupOffset(ctx, request);
+//                broker的状态数据
             case RequestCode.VIEW_BROKER_STATS_DATA:
                 return ViewBrokerStatsData(ctx, request);
+//                获取broker消费者组状态
             case RequestCode.GET_BROKER_CONSUME_STATS:
                 return fetchAllConsumeStatsInBroker(ctx, request);
+//            查询消费队列
             case RequestCode.QUERY_CONSUME_QUEUE:
                 return queryConsumeQueue(ctx, request);
             default:
@@ -219,7 +255,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         final CreateTopicRequestHeader requestHeader =
             (CreateTopicRequestHeader) request.decodeCommandCustomHeader(CreateTopicRequestHeader.class);
         log.info("updateAndCreateTopic called by {}", RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
-
+//        topic名和broker集群名字不能相同
         if (requestHeader.getTopic().equals(this.brokerController.getBrokerConfig().getBrokerClusterName())) {
             String errorMsg = "the topic[" + requestHeader.getTopic() + "] is conflict with system reserved words.";
             log.warn(errorMsg);
@@ -238,6 +274,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             log.error("Failed to produce a proper response", e);
         }
 
+        //创建topic配置
         TopicConfig topicConfig = new TopicConfig(requestHeader.getTopic());
         topicConfig.setReadQueueNums(requestHeader.getReadQueueNums());
         topicConfig.setWriteQueueNums(requestHeader.getWriteQueueNums());
@@ -245,8 +282,10 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         topicConfig.setPerm(requestHeader.getPerm());
         topicConfig.setTopicSysFlag(requestHeader.getTopicSysFlag() == null ? 0 : requestHeader.getTopicSysFlag());
 
+        //更新topic配置
         this.brokerController.getTopicConfigManager().updateTopicConfig(topicConfig);
 
+        //按版本号注册broker数据
         this.brokerController.registerIncrementBrokerData(topicConfig,this.brokerController.getTopicConfigManager().getDataVersion());
 
         return null;

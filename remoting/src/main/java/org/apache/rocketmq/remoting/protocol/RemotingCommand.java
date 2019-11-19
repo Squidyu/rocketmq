@@ -143,12 +143,14 @@ public class RemotingCommand {
 
     public static RemotingCommand decode(final ByteBuffer byteBuffer) {
         int length = byteBuffer.limit();
+        //        源消息头
         int oriHeaderLen = byteBuffer.getInt();
+        //        消息头长度
         int headerLength = getHeaderLength(oriHeaderLen);
 
         byte[] headerData = new byte[headerLength];
         byteBuffer.get(headerData);
-
+//        根据消息头中传入的序列化类型解码
         RemotingCommand cmd = headerDecode(headerData, getProtocolType(oriHeaderLen));
 
         int bodyLength = length - 4 - headerLength;
@@ -168,11 +170,11 @@ public class RemotingCommand {
 
     private static RemotingCommand headerDecode(byte[] headerData, SerializeType type) {
         switch (type) {
-            case JSON:
+            case JSON://header json形式解码
                 RemotingCommand resultJson = RemotingSerializable.decode(headerData, RemotingCommand.class);
                 resultJson.setSerializeTypeCurrentRPC(type);
                 return resultJson;
-            case ROCKETMQ:
+            case ROCKETMQ://mq代理反序列化
                 RemotingCommand resultRMQ = RocketMQSerializable.rocketMQProtocolDecode(headerData);
                 resultRMQ.setSerializeTypeCurrentRPC(type);
                 return resultRMQ;
@@ -362,8 +364,10 @@ public class RemotingCommand {
     private byte[] headerEncode() {
         this.makeCustomHeaderToNet();
         if (SerializeType.ROCKETMQ == serializeTypeCurrentRPC) {
+            //            mq代理编码
             return RocketMQSerializable.rocketMQProtocolEncode(this);
         } else {
+            //            json编码
             return RemotingSerializable.encode(this);
         }
     }
@@ -406,13 +410,14 @@ public class RemotingCommand {
 
         // 2> header data length
         byte[] headerData;
+        //        消息头数据编码
         headerData = this.headerEncode();
 
         length += headerData.length;
 
         // 3> body data length
         length += bodyLength;
-
+//        分配缓冲区
         ByteBuffer result = ByteBuffer.allocate(4 + length - bodyLength);
 
         // length

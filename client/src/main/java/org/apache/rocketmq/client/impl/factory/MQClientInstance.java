@@ -224,9 +224,9 @@ public class MQClientInstance {
 
         synchronized (this) {
             switch (this.serviceState) {
-                case CREATE_JUST:
+                case CREATE_JUST://仅创建不启动
                     this.serviceState = ServiceState.START_FAILED;
-                    // If not specified,looking address from name server
+                    // If not specified,looking address from name server如果启动的时候命令行没有指定name server的地址，就去获取
                     if (null == this.clientConfig.getNamesrvAddr()) {
 //                        监测连接是否可用
                         this.mQClientAPIImpl.fetchNameServerAddr();

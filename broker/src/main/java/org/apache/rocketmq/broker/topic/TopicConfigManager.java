@@ -314,15 +314,17 @@ public class TopicConfigManager extends ConfigManager {
     }
 
     public void updateTopicConfig(final TopicConfig topicConfig) {
+
         TopicConfig old = this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
         if (old != null) {
             log.info("update topic config, old:[{}] new:[{}]", old, topicConfig);
         } else {
             log.info("create new topic [{}]", topicConfig);
         }
-
+//        这里用版本号来标记数据改变过了
         this.dataVersion.nextVersion();
 
+//        持久化
         this.persist();
     }
 
