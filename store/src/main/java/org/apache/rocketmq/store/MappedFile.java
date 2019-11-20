@@ -89,8 +89,10 @@ public class MappedFile extends ReferenceResource {
     }
 
     public static void clean(final ByteBuffer buffer) {
+//        缓冲区合法且不是直接缓冲区
         if (buffer == null || !buffer.isDirect() || buffer.capacity() == 0)
             return;
+//        执行删除
         invoke(invoke(viewed(buffer), "cleaner"), "clean");
     }
 
@@ -430,23 +432,29 @@ public class MappedFile extends ReferenceResource {
                 + " have cleanup, do not do it again.");
             return true;
         }
-
+//        清除映射缓冲区
         clean(this.mappedByteBuffer);
+//        添加映射文件所占虚拟内存
         TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(this.fileSize * (-1));
+//        改变映射文件数量
         TOTAL_MAPPED_FILES.decrementAndGet();
         log.info("unmap file[REF:" + currentRef + "] " + this.fileName + " OK");
         return true;
     }
 
     public boolean destroy(final long intervalForcibly) {
+//        清除资源
         this.shutdown(intervalForcibly);
 
+        //如果清除完成
         if (this.isCleanupOver()) {
             try {
+                //关闭channel
                 this.fileChannel.close();
                 log.info("close file channel " + this.fileName + " OK");
 
                 long beginTime = System.currentTimeMillis();
+//                删除文件
                 boolean result = this.file.delete();
                 log.info("delete file[REF:" + this.getRefCount() + "] " + this.fileName
                     + (result ? " OK, " : " Failed, ") + "W:" + this.getWrotePosition() + " M:"

@@ -298,8 +298,9 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             (DeleteTopicRequestHeader) request.decodeCommandCustomHeader(DeleteTopicRequestHeader.class);
 
         log.info("deleteTopic called by {}", RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
-
+//        删除topic
         this.brokerController.getTopicConfigManager().deleteTopicConfig(requestHeader.getTopic());
+//        删除客户端消息队列中的无用的topic
         this.brokerController.getMessageStore()
             .cleanUnusedTopic(this.brokerController.getTopicConfigManager().getTopicConfigTable().keySet());
 

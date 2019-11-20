@@ -568,12 +568,14 @@ public class MappedFileQueue {
 
     public void destroy() {
         for (MappedFile mf : this.mappedFiles) {
+//            映射文件销毁 间隔3秒
             mf.destroy(1000 * 3);
         }
+//        同步删除映射文件队列
         this.mappedFiles.clear();
         this.flushedWhere = 0;
 
-        // delete parent directory
+        // delete parent directory 删除父级文件夹
         File file = new File(storePath);
         if (file.isDirectory()) {
             file.delete();

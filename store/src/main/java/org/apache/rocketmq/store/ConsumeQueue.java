@@ -542,8 +542,10 @@ public class ConsumeQueue {
     public void destroy() {
         this.maxPhysicOffset = -1;
         this.minLogicOffset = 0;
+//        映射文件队列销毁
         this.mappedFileQueue.destroy();
         if (isExtReadEnable()) {
+//            消费队列销毁
             this.consumeQueueExt.destroy();
         }
     }
