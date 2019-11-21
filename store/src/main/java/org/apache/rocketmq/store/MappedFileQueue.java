@@ -300,8 +300,10 @@ public class MappedFileQueue {
     }
 
     public long getMaxOffset() {
+        //获取存储映射文件队列中索引位置最大的映射文件
         MappedFile mappedFile = getLastMappedFile();
         if (mappedFile != null) {
+//            映射文件的起始offset+映射文件的可读取的索引位置
             return mappedFile.getFileFromOffset() + mappedFile.getReadPosition();
         }
         return 0;
@@ -461,7 +463,9 @@ public class MappedFileQueue {
      */
     public MappedFile findMappedFileByOffset(final long offset, final boolean returnFirstOnNotFound) {
         try {
+//            获取第一个映射文件
             MappedFile firstMappedFile = this.getFirstMappedFile();
+//            获取最后一个映射文件
             MappedFile lastMappedFile = this.getLastMappedFile();
             if (firstMappedFile != null && lastMappedFile != null) {
                 if (offset < firstMappedFile.getFileFromOffset() || offset >= lastMappedFile.getFileFromOffset() + this.mappedFileSize) {
@@ -472,18 +476,20 @@ public class MappedFileQueue {
                         this.mappedFileSize,
                         this.mappedFiles.size());
                 } else {
+//                    找到映射文件在队列中的索引位置
                     int index = (int) ((offset / this.mappedFileSize) - (firstMappedFile.getFileFromOffset() / this.mappedFileSize));
                     MappedFile targetFile = null;
                     try {
+                        //获取offset对应的文件
                         targetFile = this.mappedFiles.get(index);
                     } catch (Exception ignored) {
                     }
-
+//                    offset在目标文件的起始offset和结束offset范围内
                     if (targetFile != null && offset >= targetFile.getFileFromOffset()
                         && offset < targetFile.getFileFromOffset() + this.mappedFileSize) {
                         return targetFile;
                     }
-
+//                    如果按索引在队列中找不到映射文件就遍历队列查找映射文件
                     for (MappedFile tmpMappedFile : this.mappedFiles) {
                         if (offset >= tmpMappedFile.getFileFromOffset()
                             && offset < tmpMappedFile.getFileFromOffset() + this.mappedFileSize) {

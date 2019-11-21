@@ -153,7 +153,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 //            获取最小的offset
             case RequestCode.GET_MIN_OFFSET:
                 return this.getMinOffset(ctx, request);
-//            获取最早的消息存储时间获取最早的消息存储时间
+//            获取最早的消息存储时间
             case RequestCode.GET_EARLIEST_MSG_STORETIME:
                 return this.getEarliestMsgStoretime(ctx, request);
 //            获取broker的运行时信息
@@ -426,6 +426,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         return response;
     }
 
+    //获取最大偏移量
     private RemotingCommand getMaxOffset(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(GetMaxOffsetResponseHeader.class);
@@ -433,6 +434,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         final GetMaxOffsetRequestHeader requestHeader =
             (GetMaxOffsetRequestHeader) request.decodeCommandCustomHeader(GetMaxOffsetRequestHeader.class);
 
+//        根据topic和queueId获取最大的offset
         long offset = this.brokerController.getMessageStore().getMaxOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
 
         responseHeader.setOffset(offset);
@@ -448,7 +450,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         final GetMinOffsetResponseHeader responseHeader = (GetMinOffsetResponseHeader) response.readCustomHeader();
         final GetMinOffsetRequestHeader requestHeader =
             (GetMinOffsetRequestHeader) request.decodeCommandCustomHeader(GetMinOffsetRequestHeader.class);
-
+//        根据topic和queueId获取最小的offset
         long offset = this.brokerController.getMessageStore().getMinOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
 
         responseHeader.setOffset(offset);
@@ -464,6 +466,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         final GetEarliestMsgStoretimeRequestHeader requestHeader =
             (GetEarliestMsgStoretimeRequestHeader) request.decodeCommandCustomHeader(GetEarliestMsgStoretimeRequestHeader.class);
 
+        //根据topic和queueId获取最早消息存储时间
         long timestamp =
             this.brokerController.getMessageStore().getEarliestMessageTime(requestHeader.getTopic(), requestHeader.getQueueId());
 

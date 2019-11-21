@@ -604,21 +604,25 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     public long getMaxOffsetInQueue(String topic, int queueId) {
+        //获取消费者队列
         ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
         if (logic != null) {
+//            获取最大的offset
             long offset = logic.getMaxOffsetInQueue();
             return offset;
         }
-
+//消费队列不存在时返回0
         return 0;
     }
 
     public long getMinOffsetInQueue(String topic, int queueId) {
+        //获取消费者队列
         ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
         if (logic != null) {
+            //获取最小的offset
             return logic.getMinOffsetInQueue();
         }
-
+    //消费队列不存在时返回-1
         return -1;
     }
 
@@ -732,10 +736,12 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public long getEarliestMessageTime(String topic, int queueId) {
+        //获取消费者队列
         ConsumeQueue logicQueue = this.findConsumeQueue(topic, queueId);
         if (logicQueue != null) {
+            //获取最小的offset
             long minLogicOffset = logicQueue.getMinLogicOffset();
-
+//            根据下标获取SelectMappedBufferResult
             SelectMappedBufferResult result = logicQueue.getIndexBuffer(minLogicOffset / ConsumeQueue.CQ_STORE_UNIT_SIZE);
             return getStoreTime(result);
         }
