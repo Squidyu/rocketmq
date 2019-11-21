@@ -299,6 +299,7 @@ public class BrokerOuterAPI {
                                     if (body != null) {
                                         nameServerDataVersion = DataVersion.decode(body, DataVersion.class);
                                         if (!topicConfigWrapper.getDataVersion().equals(nameServerDataVersion)) {
+
                                             changed = true;
                                         }
                                     }

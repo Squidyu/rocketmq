@@ -141,13 +141,14 @@ public class Configuration {
             log.error("setStorePathFromConfig lock error");
         }
     }
-
+//    获取broker的配置文件路径
     private String getStorePath() {
         String realStorePath = null;
         try {
             readWriteLock.readLock().lockInterruptibly();
 
             try {
+//                BrokerPathConfigHelper.getBrokerConfigPath()
                 realStorePath = this.storePath;
 
                 if (this.storePathFromConfig) {
@@ -173,17 +174,19 @@ public class Configuration {
 
     public void update(Properties properties) {
         try {
+//            读写锁同步实现
             readWriteLock.writeLock().lockInterruptibly();
 
             try {
                 // the property must be exist when update
+                //更新property配置 如果配置存在
                 mergeIfExist(properties, this.allConfigs);
 
                 for (Object configObject : configObjectList) {
                     // not allConfigs to update...
                     MixAll.properties2Object(properties, configObject);
                 }
-
+//                更新数据的版本号
                 this.dataVersion.nextVersion();
 
             } finally {
@@ -194,6 +197,7 @@ public class Configuration {
             return;
         }
 
+        //持久化修改
         persist();
     }
 
@@ -203,7 +207,7 @@ public class Configuration {
 
             try {
                 String allConfigs = getAllConfigsInternal();
-
+                //获取getStorePath的路径的所有配置
                 MixAll.string2File(allConfigs, getStorePath());
             } catch (IOException e) {
                 log.error("persist string2File error, ", e);
@@ -259,6 +263,7 @@ public class Configuration {
         StringBuilder stringBuilder = new StringBuilder();
 
         // reload from config object ?
+        //将所有的configObjectList中配置放进allConfigs
         for (Object configObject : this.configObjectList) {
             Properties properties = MixAll.object2Properties(configObject);
             if (properties != null) {
@@ -269,12 +274,14 @@ public class Configuration {
         }
 
         {
+//            将所有allConfigs中配置放入stringBuilder
             stringBuilder.append(MixAll.properties2String(this.allConfigs));
         }
 
         return stringBuilder.toString();
     }
 
+    //将from的所有配置 合并到to
     private void merge(Properties from, Properties to) {
         for (Object key : from.keySet()) {
             Object fromObj = from.get(key), toObj = to.get(key);
@@ -288,10 +295,12 @@ public class Configuration {
     private void mergeIfExist(Properties from, Properties to) {
         for (Object key : from.keySet()) {
             if (!to.containsKey(key)) {
+                //原配置不存在直接下一个
                 continue;
             }
 
             Object fromObj = from.get(key), toObj = to.get(key);
+            //只是为了打印出谁替换了谁加的判断
             if (toObj != null && !toObj.equals(fromObj)) {
                 log.info("Replace, key: {}, value: {} -> {}", key, toObj, fromObj);
             }

@@ -310,10 +310,12 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand getAllTopicConfig(ChannelHandlerContext ctx, RemotingCommand request) {
+//        创建响应命令对象
         final RemotingCommand response = RemotingCommand.createResponseCommand(GetAllTopicConfigResponseHeader.class);
         // final GetAllTopicConfigResponseHeader responseHeader =
         // (GetAllTopicConfigResponseHeader) response.readCustomHeader();
 
+//        从本地缓存中获取所有topic信息
         String content = this.brokerController.getTopicConfigManager().encode();
         if (content != null && content.length() > 0) {
             try {
@@ -341,18 +343,24 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     private synchronized RemotingCommand updateBrokerConfig(ChannelHandlerContext ctx, RemotingCommand request) {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
 
+        //根据channel远程地址更新broker的配置
         log.info("updateBrokerConfig called by {}", RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
 
         byte[] body = request.getBody();
         if (body != null) {
             try {
                 String bodyStr = new String(body, MixAll.DEFAULT_CHARSET);
+//                获取配置
                 Properties properties = MixAll.string2Properties(bodyStr);
                 if (properties != null) {
                     log.info("updateBrokerConfig, new config: [{}] client: {} ", properties, ctx.channel().remoteAddress());
+//                    更新持久存储配置
                     this.brokerController.getConfiguration().update(properties);
+//                    如果有权限设置强制更新
                     if (properties.containsKey("brokerPermission")) {
+//                        更新数据的版本号
                         this.brokerController.getTopicConfigManager().getDataVersion().nextVersion();
+//                        注册所有的broker
                         this.brokerController.registerBrokerAll(false, false, true);
                     }
                 } else {
@@ -379,6 +387,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         final RemotingCommand response = RemotingCommand.createResponseCommand(GetBrokerConfigResponseHeader.class);
         final GetBrokerConfigResponseHeader responseHeader = (GetBrokerConfigResponseHeader) response.readCustomHeader();
 
+        //获取所有的broker配置
         String content = this.brokerController.getConfiguration().getAllConfigsFormatString();
         if (content != null && content.length() > 0) {
             try {

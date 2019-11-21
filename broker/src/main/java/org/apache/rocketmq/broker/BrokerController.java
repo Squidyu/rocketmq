@@ -905,7 +905,7 @@ public class BrokerController {
 
     public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
         TopicConfigSerializeWrapper topicConfigWrapper = this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
-//        向所有的broker进行注册
+//        如果没有读写权限
         if (!PermName.isWriteable(this.getBrokerConfig().getBrokerPermission())
             || !PermName.isReadable(this.getBrokerConfig().getBrokerPermission())) {
             ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<String, TopicConfig>();
@@ -917,12 +917,13 @@ public class BrokerController {
             }
             topicConfigWrapper.setTopicConfigTable(topicConfigTable);
         }
-
+//        判断broker集群是否需要注册
         if (forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
             this.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),
             this.brokerConfig.getBrokerId(),
             this.brokerConfig.getRegisterBrokerTimeoutMills())) {
+//            向所有的broker注册topic配置信息
             doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);
         }
     }
@@ -968,10 +969,12 @@ public class BrokerController {
         final int timeoutMills) {
 
         TopicConfigSerializeWrapper topicConfigWrapper = this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
+//        获取所有的namesrv去请求判断是否发生变更
         List<Boolean> changeList = brokerOuterAPI.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigWrapper, timeoutMills);
         boolean needRegister = false;
         for (Boolean changed : changeList) {
             if (changed) {
+                //任意一个namesrv变更 都需要重新注册
                 needRegister = true;
                 break;
             }
