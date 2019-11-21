@@ -408,6 +408,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         return response;
     }
 
+//    查找存储时间戳为指定值的消息的物理偏移量
     private RemotingCommand searchOffsetByTimestamp(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(SearchOffsetResponseHeader.class);

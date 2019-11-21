@@ -641,6 +641,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     public long getOffsetInQueueByTime(String topic, int queueId, long timestamp) {
+        //获取消费者队列
         ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
         if (logic != null) {
             return logic.getOffsetInQueueByTime(timestamp);
@@ -1081,8 +1082,10 @@ public class DefaultMessageStore implements MessageStore {
 
     public ConsumeQueue findConsumeQueue(String topic, int queueId) {
         ConcurrentMap<Integer, ConsumeQueue> map = consumeQueueTable.get(topic);
+        //如果根据topic获取到的队列map为空
         if (null == map) {
             ConcurrentMap<Integer, ConsumeQueue> newMap = new ConcurrentHashMap<Integer, ConsumeQueue>(128);
+            //如果topic存在 队列map为空则创建一个map并关联
             ConcurrentMap<Integer, ConsumeQueue> oldMap = consumeQueueTable.putIfAbsent(topic, newMap);
             if (oldMap != null) {
                 map = oldMap;
@@ -1091,6 +1094,7 @@ public class DefaultMessageStore implements MessageStore {
             }
         }
 
+//        如果消费者的消费队列为空创建一个放进去
         ConsumeQueue logic = map.get(queueId);
         if (null == logic) {
             ConsumeQueue newLogic = new ConsumeQueue(

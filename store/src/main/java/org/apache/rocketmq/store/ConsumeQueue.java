@@ -26,7 +26,8 @@ import org.apache.rocketmq.store.config.StorePathConfigHelper;
 
 public class ConsumeQueue {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-
+    //消费队列文件单元大小
+    //8 字节的 commitlog 物理偏移量、4 字节的消息长度、8 字节 tag hashcode
     public static final int CQ_STORE_UNIT_SIZE = 20;
     private static final InternalLogger LOG_ERROR = InternalLoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
 
@@ -152,6 +153,7 @@ public class ConsumeQueue {
     }
 
     public long getOffsetInQueueByTime(final long timestamp) {
+        //获取指定时间段的消息存储文件
         MappedFile mappedFile = this.mappedFileQueue.getMappedFileByTime(timestamp);
         if (mappedFile != null) {
             long offset = 0;
