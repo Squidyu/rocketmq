@@ -696,10 +696,12 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public HashMap<String, String> getRuntimeInfo() {
+        //获取storeStatsService运行时信息
         HashMap<String, String> result = this.storeStatsService.getRuntimeInfo();
 
         {
             String storePathPhysic = DefaultMessageStore.this.getMessageStoreConfig().getStorePathCommitLog();
+//            提交日志磁盘比率
             double physicRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathPhysic);
             result.put(RunningStats.commitLogDiskRatio.name(), String.valueOf(physicRatio));
 
@@ -709,16 +711,19 @@ public class DefaultMessageStore implements MessageStore {
 
             String storePathLogics = StorePathConfigHelper.getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir());
             double logicsRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathLogics);
+//            使用队列磁盘比率
             result.put(RunningStats.consumeQueueDiskRatio.name(), String.valueOf(logicsRatio));
         }
 
         {
             if (this.scheduleMessageService != null) {
+//                计划消息偏移量
                 this.scheduleMessageService.buildRunningStats(result);
             }
         }
-
+        //提交日志最小偏移量
         result.put(RunningStats.commitLogMinOffset.name(), String.valueOf(DefaultMessageStore.this.getMinPhyOffset()));
+        //提交日志最大偏移量
         result.put(RunningStats.commitLogMaxOffset.name(), String.valueOf(DefaultMessageStore.this.getMaxPhyOffset()));
 
         return result;
@@ -754,6 +759,7 @@ public class DefaultMessageStore implements MessageStore {
             try {
                 final long phyOffset = result.getByteBuffer().getLong();
                 final int size = result.getByteBuffer().getInt();
+//                根据SelectMappedBufferResult的offset和大小查找存储时间
                 long storeTime = this.getCommitLog().pickupStoreTimestamp(phyOffset, size);
                 return storeTime;
             } catch (Exception e) {

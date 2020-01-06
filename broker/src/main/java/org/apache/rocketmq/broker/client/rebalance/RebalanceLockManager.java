@@ -98,11 +98,14 @@ public class RebalanceLockManager {
     }
 
     private boolean isLocked(final String group, final MessageQueue mq, final String clientId) {
+//        按组从缓存中查找到消息队列集合
         ConcurrentHashMap<MessageQueue, LockEntry> groupValue = this.mqLockTable.get(group);
         if (groupValue != null) {
+            //获取队列锁信息
             LockEntry lockEntry = groupValue.get(mq);
             if (lockEntry != null) {
                 boolean locked = lockEntry.isLocked(clientId);
+                //如果锁定更新最后一次锁定时间为当前时间
                 if (locked) {
                     lockEntry.setLastUpdateTimestamp(System.currentTimeMillis());
                 }
@@ -119,6 +122,7 @@ public class RebalanceLockManager {
         Set<MessageQueue> lockedMqs = new HashSet<MessageQueue>(mqs.size());
         Set<MessageQueue> notLockedMqs = new HashSet<MessageQueue>(mqs.size());
 
+        //整理出锁定消息队列到lockedMqs 未锁定消息队列到notLockedMqs
         for (MessageQueue mq : mqs) {
             if (this.isLocked(group, mq, clientId)) {
                 lockedMqs.add(mq);
@@ -127,8 +131,10 @@ public class RebalanceLockManager {
             }
         }
 
+        //处理未锁定队列
         if (!notLockedMqs.isEmpty()) {
             try {
+                //获取锁
                 this.lock.lockInterruptibly();
                 try {
                     ConcurrentHashMap<MessageQueue, LockEntry> groupValue = this.mqLockTable.get(group);
@@ -136,7 +142,7 @@ public class RebalanceLockManager {
                         groupValue = new ConcurrentHashMap<>(32);
                         this.mqLockTable.put(group, groupValue);
                     }
-
+                    //未锁定队列进行加锁
                     for (MessageQueue mq : notLockedMqs) {
                         LockEntry lockEntry = groupValue.get(mq);
                         if (null == lockEntry) {
@@ -157,7 +163,7 @@ public class RebalanceLockManager {
                         }
 
                         String oldClientId = lockEntry.getClientId();
-
+                        //如果锁信息过期更新锁信息 有效期60s
                         if (lockEntry.isExpired()) {
                             lockEntry.setClientId(clientId);
                             lockEntry.setLastUpdateTimestamp(System.currentTimeMillis());
@@ -179,6 +185,7 @@ public class RebalanceLockManager {
                             mq);
                     }
                 } finally {
+                    //释放锁
                     this.lock.unlock();
                 }
             } catch (InterruptedException e) {
