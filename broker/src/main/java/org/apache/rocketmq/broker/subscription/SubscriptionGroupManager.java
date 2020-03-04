@@ -97,6 +97,7 @@ public class SubscriptionGroupManager extends ConfigManager {
     }
 
     public void updateSubscriptionGroupConfig(final SubscriptionGroupConfig config) {
+        /*根据订阅组名称替换配置返回旧的订阅配置信息*/
         SubscriptionGroupConfig old = this.subscriptionGroupTable.put(config.getGroupName(), config);
         if (old != null) {
             log.info("update subscription group config, old: {} new: {}", old, config);
@@ -104,8 +105,10 @@ public class SubscriptionGroupManager extends ConfigManager {
             log.info("create new subscription group, {}", config);
         }
 
+        /*版本+1*/
         this.dataVersion.nextVersion();
 
+        /*持久化配置信息*/
         this.persist();
     }
 
@@ -179,6 +182,7 @@ public class SubscriptionGroupManager extends ConfigManager {
     }
 
     public void deleteSubscriptionGroupConfig(final String groupName) {
+        /*根据订阅组名称删除订阅组*/
         SubscriptionGroupConfig old = this.subscriptionGroupTable.remove(groupName);
         if (old != null) {
             log.info("delete subscription group OK, subscription group:{}", old);

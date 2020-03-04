@@ -534,6 +534,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         log.info("updateAndCreateSubscriptionGroup called by {}", RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
 
+        /*从请求体获取订阅组配置*/
         SubscriptionGroupConfig config = RemotingSerializable.decode(request.getBody(), SubscriptionGroupConfig.class);
         if (config != null) {
             this.brokerController.getSubscriptionGroupManager().updateSubscriptionGroupConfig(config);
@@ -547,6 +548,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     private RemotingCommand getAllSubscriptionGroup(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        /*获取订阅组管理器并解析*/
         String content = this.brokerController.getSubscriptionGroupManager().encode();
         if (content != null && content.length() > 0) {
             try {
@@ -578,7 +580,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             (DeleteSubscriptionGroupRequestHeader) request.decodeCommandCustomHeader(DeleteSubscriptionGroupRequestHeader.class);
 
         log.info("deleteSubscriptionGroup called by {}", RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
-
+        /*获取请求头信息 获取要删除的订阅组名*/
         this.brokerController.getSubscriptionGroupManager().deleteSubscriptionGroupConfig(requestHeader.getGroupName());
 
         response.setCode(ResponseCode.SUCCESS);
@@ -593,6 +595,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             (GetTopicStatsInfoRequestHeader) request.decodeCommandCustomHeader(GetTopicStatsInfoRequestHeader.class);
 
         final String topic = requestHeader.getTopic();
+        /*根据topic名称从topicConfigTable获取topic配置*/
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(topic);
         if (null == topicConfig) {
             response.setCode(ResponseCode.TOPIC_NOT_EXIST);
@@ -601,6 +604,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         }
 
         TopicStatsTable topicStatsTable = new TopicStatsTable();
+        /**遍历topic写队列**/
         for (int i = 0; i < topicConfig.getWriteQueueNums(); i++) {
             MessageQueue mq = new MessageQueue();
             mq.setTopic(topic);
@@ -608,16 +612,18 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             mq.setQueueId(i);
 
             TopicOffset topicOffset = new TopicOffset();
+            /**根据topic和queueId查询消息队列最小offset**/
             long min = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, i);
             if (min < 0)
                 min = 0;
-
+            /**根据topic和queueId查询消息队列的最大offset**/
             long max = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, i);
             if (max < 0)
                 max = 0;
 
             long timestamp = 0;
             if (max > 0) {
+                /**根据topic、queueId，offset查询offset存储的时间**/
                 timestamp = this.brokerController.getMessageStore().getMessageStoreTimeStamp(topic, i, max - 1);
             }
 
@@ -641,6 +647,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         final GetConsumerConnectionListRequestHeader requestHeader =
             (GetConsumerConnectionListRequestHeader) request.decodeCommandCustomHeader(GetConsumerConnectionListRequestHeader.class);
 
+        /**获取消费者组信息**/
         ConsumerGroupInfo consumerGroupInfo =
             this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup());
         if (consumerGroupInfo != null) {
@@ -649,7 +656,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             bodydata.setConsumeType(consumerGroupInfo.getConsumeType());
             bodydata.setMessageModel(consumerGroupInfo.getMessageModel());
             bodydata.getSubscriptionTable().putAll(consumerGroupInfo.getSubscriptionTable());
-
+            /**遍历消费组信息中的客户端连接信息**/
             Iterator<Map.Entry<Channel, ClientChannelInfo>> it = consumerGroupInfo.getChannelInfoTable().entrySet().iterator();
             while (it.hasNext()) {
                 ClientChannelInfo info = it.next().getValue();
@@ -682,11 +689,13 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             (GetProducerConnectionListRequestHeader) request.decodeCommandCustomHeader(GetProducerConnectionListRequestHeader.class);
 
         ProducerConnection bodydata = new ProducerConnection();
+        /**获取生产者连接列表**/
         HashMap<Channel, ClientChannelInfo> channelInfoHashMap =
             this.brokerController.getProducerManager().getGroupChannelTable().get(requestHeader.getProducerGroup());
         if (channelInfoHashMap != null) {
             Iterator<Map.Entry<Channel, ClientChannelInfo>> it = channelInfoHashMap.entrySet().iterator();
             while (it.hasNext()) {
+                /**组装连接信息**/
                 ClientChannelInfo info = it.next().getValue();
                 Connection connection = new Connection();
                 connection.setClientId(info.getClientId());
@@ -719,12 +728,14 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         Set<String> topics = new HashSet<String>();
         if (UtilAll.isBlank(requestHeader.getTopic())) {
+            /**遍历消费者组、topic缓存信息 获取消费者所在组的topics**/
             topics = this.brokerController.getConsumerOffsetManager().whichTopicByConsumer(requestHeader.getConsumerGroup());
         } else {
             topics.add(requestHeader.getTopic());
         }
 
         for (String topic : topics) {
+            /**获取topic配置**/
             TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(topic);
             if (null == topicConfig) {
                 log.warn("consumeStats, topic config not exist, {}", topic);
@@ -732,6 +743,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             }
 
             {
+                /**按消费组和topic获取订阅数据**/
                 SubscriptionData findSubscriptionData =
                     this.brokerController.getConsumerManager().findSubscriptionData(requestHeader.getConsumerGroup(), topic);
 
@@ -741,7 +753,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                     continue;
                 }
             }
-
+            /**遍历topic写队列**/
             for (int i = 0; i < topicConfig.getReadQueueNums(); i++) {
                 MessageQueue mq = new MessageQueue();
                 mq.setTopic(topic);
@@ -766,6 +778,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
                 long timeOffset = consumerOffset - 1;
                 if (timeOffset >= 0) {
+                    /**查询最后存储时间**/
                     long lastTimestamp = this.brokerController.getMessageStore().getMessageStoreTimeStamp(topic, i, timeOffset);
                     if (lastTimestamp > 0) {
                         offsetWrapper.setLastTimestamp(lastTimestamp);
@@ -774,7 +787,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
                 consumeStats.getOffsetTable().put(mq, offsetWrapper);
             }
-
+            /** 按消费组和topic获取消费者的tps**/
             double consumeTps = this.brokerController.getBrokerStatsManager().tpsGroupGetNums(requestHeader.getConsumerGroup(), topic);
 
             consumeTps += consumeStats.getConsumeTps();
