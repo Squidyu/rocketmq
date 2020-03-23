@@ -201,7 +201,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 //                查询topic被哪些消费者消费
             case RequestCode.QUERY_TOPIC_CONSUME_BY_WHO:
                 return this.queryTopicConsumeByWho(ctx, request);
-//                注册过滤的server
+//                注册 过滤服务器
             case RequestCode.REGISTER_FILTER_SERVER:
                 return this.registerFilterServer(ctx, request);
 //            查询消费者时间跨度
@@ -905,8 +905,10 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         QueryTopicConsumeByWhoRequestHeader requestHeader =
             (QueryTopicConsumeByWhoRequestHeader) request.decodeCommandCustomHeader(QueryTopicConsumeByWhoRequestHeader.class);
 
+        /**根据topic匹配消费者组中的消费者*/
         HashSet<String> groups = this.brokerController.getConsumerManager().queryTopicConsumeByWho(requestHeader.getTopic());
 
+        /**按topic从offset信息中查询消费组*/
         Set<String> groupInOffset = this.brokerController.getConsumerOffsetManager().whichGroupByTopic(requestHeader.getTopic());
         if (groupInOffset != null && !groupInOffset.isEmpty()) {
             groups.addAll(groupInOffset);

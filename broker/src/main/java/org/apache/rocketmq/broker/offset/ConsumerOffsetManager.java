@@ -100,6 +100,7 @@ public class ConsumerOffsetManager extends ConfigManager {
         return topics;
     }
 
+    /**按topic从offset信息中查询消费组*/
     public Set<String> whichGroupByTopic(final String topic) {
         Set<String> groups = new HashSet<String>();
 

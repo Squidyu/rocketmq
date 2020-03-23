@@ -100,9 +100,11 @@ public class FilterServerManager {
 
     public void registerFilterServer(final Channel channel, final String filterServerAddr) {
         FilterServerInfo filterServerInfo = this.filterServerTable.get(channel);
+        /**同一channel的filterServer不为空时更新最后更新时间*/
         if (filterServerInfo != null) {
             filterServerInfo.setLastUpdateTimestamp(System.currentTimeMillis());
         } else {
+            /**该channel的filterServer为空时将过滤服务器信息设置到filterServerTable*/
             filterServerInfo = new FilterServerInfo();
             filterServerInfo.setFilterServerAddr(filterServerAddr);
             filterServerInfo.setLastUpdateTimestamp(System.currentTimeMillis());
