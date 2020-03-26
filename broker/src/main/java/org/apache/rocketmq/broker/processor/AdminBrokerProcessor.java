@@ -948,6 +948,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             (QueryConsumeTimeSpanRequestHeader) request.decodeCommandCustomHeader(QueryConsumeTimeSpanRequestHeader.class);
 
         final String topic = requestHeader.getTopic();
+        /**获取topic配置信息*/
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(topic);
         if (null == topicConfig) {
             response.setCode(ResponseCode.TOPIC_NOT_EXIST);
@@ -964,25 +965,33 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             mq.setQueueId(i);
             timeSpan.setMessageQueue(mq);
 
+            /**获取最早通信时间 getEarliestMessageTime可通过getMessageStoreTimeStamp优化*/
             long minTime = this.brokerController.getMessageStore().getEarliestMessageTime(topic, i);
             timeSpan.setMinTimeStamp(minTime);
 
+            /**获取最大的offset*/
             long max = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, i);
+
+            /**根据topic、queueId和最大offser获取最大时间*/
             long maxTime = this.brokerController.getMessageStore().getMessageStoreTimeStamp(topic, i, max - 1);
             timeSpan.setMaxTimeStamp(maxTime);
 
             long consumeTime;
+
+            /**按consumerGroup、topic、queueId查询consumerOffset*/
             long consumerOffset = this.brokerController.getConsumerOffsetManager().queryOffset(
                 requestHeader.getGroup(), topic, i);
             if (consumerOffset > 0) {
+                /**按topic、queueId、consumerOffset查询消费时间*/
                 consumeTime = this.brokerController.getMessageStore().getMessageStoreTimeStamp(topic, i, consumerOffset - 1);
             } else {
                 consumeTime = minTime;
             }
             timeSpan.setConsumeTimeStamp(consumeTime);
-
+            /**查询最大的offset*/
             long maxBrokerOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(requestHeader.getTopic(), i);
             if (consumerOffset < maxBrokerOffset) {
+                /**查询消费时间*/
                 long nextTime = this.brokerController.getMessageStore().getMessageStoreTimeStamp(topic, i, consumerOffset);
                 timeSpan.setDelayTime(System.currentTimeMillis() - nextTime);
             }
