@@ -192,6 +192,7 @@ public class ConsumerOffsetManager extends ConfigManager {
             for (String group : filterGroups.split(",")) {
                 Iterator<String> it = topicGroups.iterator();
                 while (it.hasNext()) {
+                    /**如果这个offsetTable中的组在过滤组filterGroups中 则从offsetTable中移除*/
                     if (group.equals(it.next().split(TOPIC_GROUP_SEPARATOR)[1])) {
                         it.remove();
                     }
@@ -199,11 +200,13 @@ public class ConsumerOffsetManager extends ConfigManager {
             }
         }
 
+        /**遍历除了需要过滤的组之外的offsetTable*/
         for (Map.Entry<String, ConcurrentMap<Integer, Long>> offSetEntry : this.offsetTable.entrySet()) {
             String topicGroup = offSetEntry.getKey();
             String[] topicGroupArr = topicGroup.split(TOPIC_GROUP_SEPARATOR);
             if (topic.equals(topicGroupArr[0])) {
                 for (Entry<Integer, Long> entry : offSetEntry.getValue().entrySet()) {
+                    /**查询队列最小的offset*/
                     long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, entry.getKey());
                     if (entry.getValue() >= minOffset) {
                         Long offset = queueMinOffset.get(entry.getKey());

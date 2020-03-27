@@ -911,6 +911,11 @@ public class DefaultMessageStore implements MessageStore {
         return this.systemClock.now();
     }
 
+    /**
+     * 有效的topics列表
+     * @param topics all valid topics.
+     * @return
+     */
     @Override
     public int cleanUnusedTopic(Set<String> topics) {
 //        遍历缓存的消息队列
@@ -942,17 +947,21 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     public void cleanExpiredConsumerQueue() {
+        /**commitLog中获取最小的offset*/
         long minCommitLogOffset = this.commitLog.getMinOffset();
 
+        /**获取缓存的topic消息队列*/
         Iterator<Entry<String, ConcurrentMap<Integer, ConsumeQueue>>> it = this.consumeQueueTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, ConcurrentMap<Integer, ConsumeQueue>> next = it.next();
             String topic = next.getKey();
             if (!topic.equals(ScheduleMessageService.SCHEDULE_TOPIC)) {
                 ConcurrentMap<Integer, ConsumeQueue> queueTable = next.getValue();
+                /**获取该topic具体的消息队列*/
                 Iterator<Entry<Integer, ConsumeQueue>> itQT = queueTable.entrySet().iterator();
                 while (itQT.hasNext()) {
                     Entry<Integer, ConsumeQueue> nextQT = itQT.next();
+                    /**获取消息队列的lastOffset*/
                     long maxCLOffsetInConsumeQueue = nextQT.getValue().getLastOffset();
 
                     if (maxCLOffsetInConsumeQueue == -1) {
@@ -961,6 +970,7 @@ public class DefaultMessageStore implements MessageStore {
                             nextQT.getValue().getQueueId(),
                             nextQT.getValue().getMaxPhysicOffset(),
                             nextQT.getValue().getMinLogicOffset());
+                    /**消息队列的lastOffset 小于 最小的offset说明过期*/
                     } else if (maxCLOffsetInConsumeQueue < minCommitLogOffset) {
                         log.info(
                             "cleanExpiredConsumerQueue: {} {} consumer queue destroyed, minCommitLogOffset: {} maxCLOffsetInConsumeQueue: {}",
@@ -968,17 +978,19 @@ public class DefaultMessageStore implements MessageStore {
                             nextQT.getKey(),
                             minCommitLogOffset,
                             maxCLOffsetInConsumeQueue);
-
+                        /**根据topic和queueId删除topic和queue的offset*/
                         DefaultMessageStore.this.commitLog.removeQueueFromTopicQueueTable(nextQT.getValue().getTopic(),
                             nextQT.getValue().getQueueId());
 
                         nextQT.getValue().destroy();
+                        /**删除消息队列元素*/
                         itQT.remove();
                     }
                 }
 
                 if (queueTable.isEmpty()) {
                     log.info("cleanExpiredConsumerQueue: {},topic destroyed", topic);
+                    /**消息队列为空，移除该topic的消息队列信息*/
                     it.remove();
                 }
             }

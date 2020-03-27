@@ -1054,9 +1054,10 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         QueryCorrectionOffsetHeader requestHeader =
             (QueryCorrectionOffsetHeader) request.decodeCommandCustomHeader(QueryCorrectionOffsetHeader.class);
 
+        /**在所有的消费组中查询最小的offset*/
         Map<Integer, Long> correctionOffset = this.brokerController.getConsumerOffsetManager()
             .queryMinOffsetInAllGroup(requestHeader.getTopic(), requestHeader.getFilterGroups());
-
+        /**按topic和消费组查找offset*/
         Map<Integer, Long> compareOffset =
             this.brokerController.getConsumerOffsetManager().queryOffset(requestHeader.getTopic(), requestHeader.getCompareGroup());
 
@@ -1358,6 +1359,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         final String consumerGroup,
         final String clientId) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        /**按消费组和clentId查询client的渠道信息*/
         ClientChannelInfo clientChannelInfo = this.brokerController.getConsumerManager().findChannel(consumerGroup, clientId);
 
         if (null == clientChannelInfo) {
@@ -1366,6 +1368,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             return response;
         }
 
+        /**消费者版本太低*/
         if (clientChannelInfo.getVersion() < MQVersion.Version.V3_1_8_SNAPSHOT.ordinal()) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(String.format("The Consumer <%s> Version <%s> too low to finish, please upgrade it to V3_1_8_SNAPSHOT",
