@@ -671,6 +671,7 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public SelectMappedBufferResult selectOneMessageByOffset(long commitLogOffset) {
+        /**SelectMappedBufferResult中存储的是消息offset、创建时间*/
         SelectMappedBufferResult sbr = this.commitLog.getMessage(commitLogOffset, 4);
         if (null != sbr) {
             try {

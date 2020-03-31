@@ -53,8 +53,10 @@ public class ConsumerManager {
     }
 
     public SubscriptionData findSubscriptionData(final String group, final String topic) {
+        /**根据group从缓存中获取消费组信息*/
         ConsumerGroupInfo consumerGroupInfo = this.getConsumerGroupInfo(group);
         if (consumerGroupInfo != null) {
+            /**根据topic从缓存中获取订阅数据*/
             return consumerGroupInfo.findSubscriptionData(topic);
         }
 

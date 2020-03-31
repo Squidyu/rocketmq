@@ -1082,10 +1082,12 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         final ConsumeMessageDirectlyResultRequestHeader requestHeader = (ConsumeMessageDirectlyResultRequestHeader) request
             .decodeCommandCustomHeader(ConsumeMessageDirectlyResultRequestHeader.class);
 
+        /**从brokerConfig中获取brokerName设置到request的extFields中*/
         request.getExtFields().put("brokerName", this.brokerController.getBrokerConfig().getBrokerName());
         SelectMappedBufferResult selectMappedBufferResult = null;
         try {
             MessageId messageId = MessageDecoder.decodeMessageId(requestHeader.getMsgId());
+            /**根据offset从commitLog中获取消息*/
             selectMappedBufferResult = this.brokerController.getMessageStore().selectOneMessageByOffset(messageId.getOffset());
 
             byte[] body = new byte[selectMappedBufferResult.getSize()];
@@ -1097,7 +1099,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 selectMappedBufferResult.release();
             }
         }
-
+        /**返回消费者运行信息*/
         return this.callConsumer(RequestCode.CONSUME_MESSAGE_DIRECTLY, request, requestHeader.getConsumerGroup(),
             requestHeader.getClientId());
     }
@@ -1110,21 +1112,26 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         Set<String> topics;
         if (UtilAll.isBlank(requestHeader.getTopic())) {
+            /**查询被这个消费组消费的topic*/
             topics = this.brokerController.getConsumerOffsetManager().whichTopicByConsumer(requestHeader.getSrcGroup());
         } else {
             topics = new HashSet<String>();
             topics.add(requestHeader.getTopic());
         }
 
+        /**遍历topic*/
         for (String topic : topics) {
+            /**获取TopicConfig*/
             TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(topic);
             if (null == topicConfig) {
                 log.warn("[cloneGroupOffset], topic config not exist, {}", topic);
                 continue;
             }
 
+            /**如果requestHeader在线*/
             if (!requestHeader.isOffline()) {
 
+                /**查询topic、消费组的订阅信息*/
                 SubscriptionData findSubscriptionData =
                     this.brokerController.getConsumerManager().findSubscriptionData(requestHeader.getSrcGroup(), topic);
                 if (this.brokerController.getConsumerManager().findSubscriptionDataCount(requestHeader.getSrcGroup()) > 0
@@ -1133,7 +1140,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                     continue;
                 }
             }
-
+            /**clone offset*/
             this.brokerController.getConsumerOffsetManager().cloneOffset(requestHeader.getSrcGroup(), requestHeader.getDestGroup(),
                 requestHeader.getTopic());
         }
