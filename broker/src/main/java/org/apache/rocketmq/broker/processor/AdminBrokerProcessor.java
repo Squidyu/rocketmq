@@ -231,7 +231,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 //                broker的状态数据
             case RequestCode.VIEW_BROKER_STATS_DATA:
                 return ViewBrokerStatsData(ctx, request);
-//                获取broker消费者组状态
+//                拉取broker消费者组状态
             case RequestCode.GET_BROKER_CONSUME_STATS:
                 return fetchAllConsumeStatsInBroker(ctx, request);
 //            查询消费队列
@@ -1157,6 +1157,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         MessageStore messageStore = this.brokerController.getMessageStore();
 
+        /**从缓存中获取broker的状态数据*/
         StatsItem statsItem = messageStore.getBrokerStatsManager().getStatsItem(requestHeader.getStatsName(), requestHeader.getStatsKey());
         if (null == statsItem) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -1165,7 +1166,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         }
 
         BrokerStatsData brokerStatsData = new BrokerStatsData();
-
+        /**这里方法块的作用是限定变量生命周期，及早释放，提高内存利用率*/
         {
             BrokerStatsItem it = new BrokerStatsItem();
             StatsSnapshot ss = statsItem.getStatsDataInMinute();
@@ -1205,6 +1206,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         GetConsumeStatsInBrokerHeader requestHeader =
             (GetConsumeStatsInBrokerHeader) request.decodeCommandCustomHeader(GetConsumeStatsInBrokerHeader.class);
         boolean isOrder = requestHeader.isOrder();
+        /**获取订阅的组 配置信息*/
         ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroups =
             brokerController.getSubscriptionGroupManager().getSubscriptionGroupTable();
 
@@ -1215,10 +1217,12 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         for (String group : subscriptionGroups.keySet()) {
             Map<String, List<ConsumeStats>> subscripTopicConsumeMap = new HashMap<String, List<ConsumeStats>>();
+            /**查询被这个消费组消费的topic*/
             Set<String> topics = this.brokerController.getConsumerOffsetManager().whichTopicByConsumer(group);
             List<ConsumeStats> consumeStatsList = new ArrayList<ConsumeStats>();
             for (String topic : topics) {
                 ConsumeStats consumeStats = new ConsumeStats();
+                /**获取topic配置*/
                 TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(topic);
                 if (null == topicConfig) {
                     log.warn("consumeStats, topic config not exist, {}", topic);
@@ -1230,6 +1234,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 }
 
                 {
+                    /**查询topic、消费组的订阅信息*/
                     SubscriptionData findSubscriptionData = this.brokerController.getConsumerManager().findSubscriptionData(group, topic);
 
                     if (null == findSubscriptionData
@@ -1238,7 +1243,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                         continue;
                     }
                 }
-
+                /**遍历topicConfig配置的写队列*/
                 for (int i = 0; i < topicConfig.getWriteQueueNums(); i++) {
                     MessageQueue mq = new MessageQueue();
                     mq.setTopic(topic);
@@ -1267,6 +1272,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                     }
                     consumeStats.getOffsetTable().put(mq, offsetWrapper);
                 }
+                /**根据消费组和topic获取tps*/
                 double consumeTps = this.brokerController.getBrokerStatsManager().tpsGroupGetNums(group, topic);
                 consumeTps += consumeStats.getConsumeTps();
                 consumeStats.setConsumeTps(consumeTps);
@@ -1410,6 +1416,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
 
+        /**根据topic获取消费者队列*/
         ConsumeQueue consumeQueue = this.brokerController.getMessageStore().getConsumeQueue(requestHeader.getTopic(),
             requestHeader.getQueueId());
         if (consumeQueue == null) {
@@ -1427,6 +1434,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         MessageFilter messageFilter = null;
         if (requestHeader.getConsumerGroup() != null) {
+            /**查询topic、消费组的订阅信息*/
             SubscriptionData subscriptionData = this.brokerController.getConsumerManager().findSubscriptionData(
                 requestHeader.getConsumerGroup(), requestHeader.getTopic()
             );
@@ -1434,6 +1442,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             if (subscriptionData == null) {
                 body.setFilterData(String.format("%s@%s is not online!", requestHeader.getConsumerGroup(), requestHeader.getTopic()));
             } else {
+                /**获取消费者过滤信息*/
                 ConsumerFilterData filterData = this.brokerController.getConsumerFilterManager()
                     .get(requestHeader.getTopic(), requestHeader.getConsumerGroup());
                 body.setFilterData(JSON.toJSONString(filterData, true));
@@ -1443,6 +1452,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             }
         }
 
+        /**根据index获取selectMappedBufferResult*/
         SelectMappedBufferResult result = consumeQueue.getIndexBuffer(requestHeader.getIndex());
         if (result == null) {
             response.setRemark(String.format("Index %d of %d@%s is not exist!", requestHeader.getIndex(), requestHeader.getQueueId(), requestHeader.getTopic()));
@@ -1450,6 +1460,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         }
         try {
             List<ConsumeQueueData> queues = new ArrayList<>();
+            /**遍历消费者队列信息*/
             for (int i = 0; i < result.getSize() && i < requestHeader.getCount() * ConsumeQueue.CQ_STORE_UNIT_SIZE; i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
                 ConsumeQueueData one = new ConsumeQueueData();
                 one.setPhysicOffset(result.getByteBuffer().getLong());
