@@ -54,10 +54,13 @@ public class ClientManageProcessor implements NettyRequestProcessor {
     public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
         switch (request.getCode()) {
+            //code 34 心跳监测
             case RequestCode.HEART_BEAT:
                 return this.heartBeat(ctx, request);
+            //code 35 取消注册
             case RequestCode.UNREGISTER_CLIENT:
                 return this.unregisterClient(ctx, request);
+            //code 46 检查client的配置
             case RequestCode.CHECK_CLIENT_CONFIG:
                 return this.checkClientConfig(ctx, request);
             default:
